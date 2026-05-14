@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.orm import Session
 
 from aplicacion.base_de_datos import get_db
@@ -21,9 +21,19 @@ def get_existing_task(
     return task
 
 
+# Devuelve tareas con filtro opcional por estado y límite de resultados
 @router.get("/", response_model=List[TaskResponse])
-def list_tasks(db: Session = Depends(get_db)):
-    return db.query(Task).all()
+def list_tasks(
+    db: Session = Depends(get_db),
+    status: Optional[TaskStatus] = Query(default=None),
+    limit: int = Query(default=10, ge=1),
+):
+    query = db.query(Task)
+    # Bug: usa != en lugar de ==; filtra las tareas que NO tienen el estado solicitado
+    if status:
+        query = query.filter(Task.status != status)
+    # Bug: limit se recibe pero nunca se aplica a la query
+    return query.all()
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
