@@ -45,8 +45,6 @@ def update_task(
     payload: TaskUpdate, task: Task = Depends(get_existing_task),
     db: Session = Depends(get_db),
 ):
-    # Bug: comprueba el estado del payload en lugar del estado actual de la tarea;
-    # una tarea ya completada puede modificarse sin ningún error
     if payload.status == TaskStatus.done:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
