@@ -1,0 +1,8 @@
+#!/bin/bash
+# Comandos para crear PRs en tu fork de gestor-tareas-api
+
+gh pr create --repo <CUENTA>/gestor-tareas-api --base main --head escenario-1-bug-logico --title "Escenario 1: Bug Lógico" --body ""
+gh pr create --repo <CUENTA>/gestor-tareas-api --base main --head escenario-2-sin-tests --title "Escenario 2: Sin Tests" --body ""
+gh pr create --repo <CUENTA>/gestor-tareas-api --base main --head escenario-3-codigo-duplicado --title "Escenario 3: Código Duplicado" --body ""
+gh pr create --repo <CUENTA>/gestor-tareas-api --base main --head escenario-4-sin-documentacion --title "Escenario 4: Sin Documentación" --body ""
+gh pr create --repo <CUENTA>/gestor-tareas-api --base main --head escenario-5-endpoint-roto --title "Escenario 5: Endpoint Roto" --body ""
