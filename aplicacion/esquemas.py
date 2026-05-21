@@ -1,13 +1,13 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from aplicacion.modelos import TaskStatus
 
 
 class TaskCreate(BaseModel):
-    title: str = Field(min_length=3)
+    title: str
     description: Optional[str] = None
     status: TaskStatus = TaskStatus.pending
 
