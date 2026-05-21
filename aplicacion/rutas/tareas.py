@@ -36,6 +36,12 @@ def list_tasks(
     return query.all()
 
 
+# Devuelve las tareas filtradas por su estado
+@router.get("/status/{task_status}", response_model=List[TaskResponse])
+def list_tasks_by_status(task_status: TaskStatus, db: Session = Depends(get_db)):
+    return db.query(Task).filter(Task.status == task_status).all()
+
+
 @router.get("/{task_id}", response_model=TaskResponse)
 def get_task(task: Task = Depends(get_existing_task)):
     return task
