@@ -474,6 +474,12 @@ class TestListTasksByStatus:
         assert data[0]["title"] == "Tarea pendiente"
         assert data[0]["status"] == "pending"
 
+    def test_list_tasks_by_status_empty_result(self, client):
+        client.post("/tasks/", json={"title": "Tarea pendiente"})
+        response = client.get("/tasks/status/done")
+        assert response.status_code == 200
+        assert response.json() == []
+
     def test_list_tasks_by_status_invalid_status_returns_422(self, client):
         response = client.get("/tasks/status/invalid_status")
         assert response.status_code == 422
