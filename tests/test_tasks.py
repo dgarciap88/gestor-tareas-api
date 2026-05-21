@@ -455,3 +455,26 @@ class TestCRUDFlow:
         gone = client.get(f"/tasks/{tid}")
         assert gone.status_code == 404
         assert gone.json()["detail"] == "Task not found"
+
+
+# ---------------------------------------------------------------------------
+# GET /tasks/status/{status} — filtrado por estado
+# ---------------------------------------------------------------------------
+
+
+class TestListTasksByStatus:
+    def test_list_tasks_by_status_returns_matching_tasks(self, client):
+        client.post("/tasks/", json={"title": "Tarea pendiente", "status": "pending"})
+        client.post("/tasks/", json={"title": "Tarea en progreso", "status": "in_progress"})
+
+        response = client.get("/tasks/status/pending")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["title"] == "Tarea pendiente"
+        assert data[0]["status"] == "pending"
+
+    def test_list_tasks_by_status_invalid_status_returns_422(self, client):
+        response = client.get("/tasks/status/invalid_status")
+        assert response.status_code == 422
+        assert "detail" in response.json()
