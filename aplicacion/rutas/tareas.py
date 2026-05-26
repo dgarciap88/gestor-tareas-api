@@ -13,27 +13,30 @@ from aplicacion.modelos import Task, TaskStatus
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
-# Devuelve la lista completa de tareas almacenadas
+def _get_task_or_404(task_id: int, db: Session) -> Task:
+    """Valida el id, busca la tarea y lanza la excepción HTTP correspondiente."""
+    if task_id <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid task id"
+        )
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
+    return task
+
+
 @router.get("/", response_model=List[TaskResponse])
 def list_tasks(db: Session = Depends(get_db)):
     return db.query(Task).all()
 
 
-# Devuelve una tarea por su identificador; 404 si no existe
 @router.get("/{task_id}", response_model=TaskResponse)
 def get_task(task_id: int, db: Session = Depends(get_db)):
-    # Buscar tarea por id y devolver 404 si no existe
-    if task_id <= 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid task id")
-    task = db.query(Task).filter(Task.id == task_id).first()
-    if task is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-
-    return task
+    return _get_task_or_404(task_id, db)
 
 
-# Crea una nueva tarea y devuelve el recurso creado con código 201
-# Bug: no valida que el título tenga al menos 3 caracteres antes de persistir
 @router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 def create_task(payload: TaskCreate, db: Session = Depends(get_db)):
     task = Task(**payload.model_dump())
@@ -43,15 +46,9 @@ def create_task(payload: TaskCreate, db: Session = Depends(get_db)):
     return task
 
 
-# Actualiza parcialmente una tarea; solo modifica los campos enviados en el cuerpo
 @router.patch("/{task_id}", response_model=TaskResponse)
 def update_task(task_id: int, payload: TaskUpdate, db: Session = Depends(get_db)):
-    # Buscar tarea por id y devolver 404 si no existe
-    if task_id <= 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid task id")
-    task = db.query(Task).filter(Task.id == task_id).first()
-    if task is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    task = _get_task_or_404(task_id, db)
 
     # Bug: comprueba el estado del payload en lugar del estado actual de la tarea;
     # una tarea ya completada puede modificarse sin ningún error
@@ -68,15 +65,8 @@ def update_task(task_id: int, payload: TaskUpdate, db: Session = Depends(get_db)
     return task
 
 
-# Elimina una tarea de la base de datos; devuelve 204 sin cuerpo
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(task_id: int, db: Session = Depends(get_db)):
-    # Buscar tarea por id y devolver 404 si no existe
-    if task_id <= 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid task id")
-    task = db.query(Task).filter(Task.id == task_id).first()
-    if task is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-
+    task = _get_task_or_404(task_id, db)
     db.delete(task)
     db.commit()
