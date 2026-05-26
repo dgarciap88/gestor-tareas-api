@@ -5,6 +5,21 @@ Prioriza casos de error y casos límite sobre el happy path.
 
 import pytest
 
+from fastapi.testclient import TestClient
+
+from aplicacion.principal import app
+
+
+# ---------------------------------------------------------------------------
+# Fixture del cliente de test (usado por todos los tests de endpoint)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def client():
+    with TestClient(app) as c:
+        yield c
+
 
 # ---------------------------------------------------------------------------
 # GET /tasks/{task_id} — errores y límites
@@ -20,18 +35,22 @@ class TestGetTaskErrors:
     def test_get_task_id_zero_returns_404(self, client):
         resp = client.get("/tasks/0")
         assert resp.status_code == 404
+        assert resp.json()["detail"] == "Task not found"
 
     def test_get_task_negative_id_returns_404(self, client):
         resp = client.get("/tasks/-1")
         assert resp.status_code == 404
+        assert resp.json()["detail"] == "Task not found"
 
     def test_get_task_string_id_returns_422(self, client):
         resp = client.get("/tasks/abc")
         assert resp.status_code == 422
+        assert "detail" in resp.json()
 
     def test_get_task_float_id_returns_422(self, client):
         resp = client.get("/tasks/1.5")
         assert resp.status_code == 422
+        assert "detail" in resp.json()
 
 
 # ---------------------------------------------------------------------------
@@ -43,34 +62,46 @@ class TestCreateTaskErrors:
     def test_create_task_missing_title_returns_422(self, client):
         resp = client.post("/tasks/", json={})
         assert resp.status_code == 422
+        assert "detail" in resp.json()
 
     def test_create_task_null_title_returns_422(self, client):
         resp = client.post("/tasks/", json={"title": None})
         assert resp.status_code == 422
+        assert "detail" in resp.json()
 
     def test_create_task_invalid_status_returns_422(self, client):
         resp = client.post(
-            "/tasks/", json={"title": "t", "status": "invalid_status"}
+            "/tasks/",
+            json={"title": "t", "status": "invalid_status"},
         )
         assert resp.status_code == 422
+        assert "detail" in resp.json()
 
     def test_create_task_extra_fields_are_ignored(self, client):
         resp = client.post(
-            "/tasks/", json={"title": "t", "extra_field": "ignored"}
+            "/tasks/",
+            json={"title": "t", "extra_field": "ignored"},
         )
         assert resp.status_code == 201
-        body = resp.json()
-        assert "extra_field" not in body
+        assert "extra_field" not in resp.json()
 
     def test_create_task_empty_body_returns_422(self, client):
-        resp = client.post("/tasks/", content=b"", headers={"content-type": "application/json"})
+        resp = client.post(
+            "/tasks/",
+            content=b"",
+            headers={"content-type": "application/json"},
+        )
         assert resp.status_code == 422
+        assert "detail" in resp.json()
 
     def test_create_task_non_json_body_returns_422(self, client):
         resp = client.post(
-            "/tasks/", content=b"not json", headers={"content-type": "application/json"}
+            "/tasks/",
+            content=b"not json",
+            headers={"content-type": "application/json"},
         )
         assert resp.status_code == 422
+        assert "detail" in resp.json()
 
     def test_create_task_title_only_whitespace(self, client):
         resp = client.post("/tasks/", json={"title": "   "})
@@ -85,6 +116,7 @@ class TestCreateTaskErrors:
     def test_create_task_title_integer_returns_422(self, client):
         resp = client.post("/tasks/", json={"title": 12345})
         assert resp.status_code == 422
+        assert "detail" in resp.json()
 
 
 # ---------------------------------------------------------------------------
@@ -101,11 +133,16 @@ class TestUpdateTaskErrors:
     def test_update_task_invalid_status_returns_422(self, client):
         create = client.post("/tasks/", json={"title": "t"})
         tid = create.json()["id"]
-        resp = client.patch(f"/tasks/{tid}", json={"status": "bad"})
+        resp = client.patch(
+            f"/tasks/{tid}", json={"status": "bad"}
+        )
         assert resp.status_code == 422
+        assert "detail" in resp.json()
 
     def test_update_task_empty_body_no_changes(self, client):
-        create = client.post("/tasks/", json={"title": "original"})
+        create = client.post(
+            "/tasks/", json={"title": "original"}
+        )
         tid = create.json()["id"]
         resp = client.patch(f"/tasks/{tid}", json={})
         assert resp.status_code == 200
@@ -114,6 +151,7 @@ class TestUpdateTaskErrors:
     def test_update_task_string_id_returns_422(self, client):
         resp = client.patch("/tasks/abc", json={"title": "x"})
         assert resp.status_code == 422
+        assert "detail" in resp.json()
 
     def test_update_task_null_title_triggers_db_error(self, client):
         from sqlalchemy.exc import IntegrityError
@@ -125,10 +163,13 @@ class TestUpdateTaskErrors:
 
     def test_update_task_null_description(self, client):
         create = client.post(
-            "/tasks/", json={"title": "t", "description": "desc"}
+            "/tasks/",
+            json={"title": "t", "description": "desc"},
         )
         tid = create.json()["id"]
-        resp = client.patch(f"/tasks/{tid}", json={"description": None})
+        resp = client.patch(
+            f"/tasks/{tid}", json={"description": None}
+        )
         assert resp.status_code == 200
         assert resp.json()["description"] is None
 
@@ -147,14 +188,18 @@ class TestDeleteTaskErrors:
     def test_delete_task_string_id_returns_422(self, client):
         resp = client.delete("/tasks/abc")
         assert resp.status_code == 422
+        assert "detail" in resp.json()
 
     def test_delete_task_twice_returns_404_second_time(self, client):
-        create = client.post("/tasks/", json={"title": "to_delete"})
+        create = client.post(
+            "/tasks/", json={"title": "to_delete"}
+        )
         tid = create.json()["id"]
         first = client.delete(f"/tasks/{tid}")
         assert first.status_code == 204
         second = client.delete(f"/tasks/{tid}")
         assert second.status_code == 404
+        assert second.json()["detail"] == "Task not found"
 
 
 # ---------------------------------------------------------------------------
@@ -209,7 +254,8 @@ class TestCreateTaskHappyPath:
 
     def test_create_task_status_done(self, client):
         resp = client.post(
-            "/tasks/", json={"title": "done task", "status": "done"}
+            "/tasks/",
+            json={"title": "done task", "status": "done"},
         )
         assert resp.status_code == 201
         assert resp.json()["status"] == "done"
@@ -229,7 +275,9 @@ class TestCreateTaskHappyPath:
 
 class TestGetTaskHappyPath:
     def test_get_created_task(self, client):
-        create = client.post("/tasks/", json={"title": "read me"})
+        create = client.post(
+            "/tasks/", json={"title": "read me"}
+        )
         tid = create.json()["id"]
         resp = client.get(f"/tasks/{tid}")
         assert resp.status_code == 200
@@ -246,14 +294,18 @@ class TestUpdateTaskHappyPath:
     def test_update_title_only(self, client):
         create = client.post("/tasks/", json={"title": "old"})
         tid = create.json()["id"]
-        resp = client.patch(f"/tasks/{tid}", json={"title": "new"})
+        resp = client.patch(
+            f"/tasks/{tid}", json={"title": "new"}
+        )
         assert resp.status_code == 200
         assert resp.json()["title"] == "new"
 
     def test_update_status(self, client):
         create = client.post("/tasks/", json={"title": "t"})
         tid = create.json()["id"]
-        resp = client.patch(f"/tasks/{tid}", json={"status": "done"})
+        resp = client.patch(
+            f"/tasks/{tid}", json={"status": "done"}
+        )
         assert resp.status_code == 200
         assert resp.json()["status"] == "done"
 
@@ -262,7 +314,11 @@ class TestUpdateTaskHappyPath:
         tid = create.json()["id"]
         resp = client.patch(
             f"/tasks/{tid}",
-            json={"title": "updated", "description": "new desc", "status": "in_progress"},
+            json={
+                "title": "updated",
+                "description": "new desc",
+                "status": "in_progress",
+            },
         )
         assert resp.status_code == 200
         body = resp.json()
@@ -278,7 +334,9 @@ class TestUpdateTaskHappyPath:
 
 class TestDeleteTaskHappyPath:
     def test_delete_task_returns_204(self, client):
-        create = client.post("/tasks/", json={"title": "delete me"})
+        create = client.post(
+            "/tasks/", json={"title": "delete me"}
+        )
         tid = create.json()["id"]
         resp = client.delete(f"/tasks/{tid}")
         assert resp.status_code == 204
@@ -336,7 +394,7 @@ class TestSchemas:
 
 
 # ---------------------------------------------------------------------------
-# base_de_datos — get_db generator
+# base_de_datos — generador get_db
 # ---------------------------------------------------------------------------
 
 
@@ -356,7 +414,7 @@ class TestGetDb:
         from aplicacion.base_de_datos import get_db
 
         gen = get_db()
-        session = next(gen)
+        next(gen)
         try:
             gen.throw(RuntimeError("test error"))
         except RuntimeError:
@@ -372,7 +430,11 @@ class TestCRUDFlow:
     def test_full_lifecycle(self, client):
         created = client.post(
             "/tasks/",
-            json={"title": "lifecycle", "description": "d", "status": "pending"},
+            json={
+                "title": "lifecycle",
+                "description": "d",
+                "status": "pending",
+            },
         )
         assert created.status_code == 201
         tid = created.json()["id"]
@@ -392,3 +454,4 @@ class TestCRUDFlow:
 
         gone = client.get(f"/tasks/{tid}")
         assert gone.status_code == 404
+        assert gone.json()["detail"] == "Task not found"

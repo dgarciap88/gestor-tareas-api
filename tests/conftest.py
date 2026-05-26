@@ -1,16 +1,18 @@
+# Configuración compartida de la base de datos de test con SQLite en memoria
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from aplicacion.base_de_datos import Base, get_db
 from aplicacion.principal import app
 
-from httpx import ASGITransport, AsyncClient
-
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_tareas.db"
-
+# SQLite en memoria con StaticPool para aislamiento entre tests
 engine_test = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    "sqlite://",
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(
     autocommit=False, autoflush=False, bind=engine_test
@@ -19,13 +21,13 @@ TestingSessionLocal = sessionmaker(
 
 @pytest.fixture(autouse=True)
 def setup_database():
+    """Crea las tablas antes de cada test y las elimina al terminar."""
     Base.metadata.create_all(bind=engine_test)
     yield
     Base.metadata.drop_all(bind=engine_test)
 
 
-@pytest.fixture()
-def db_session(setup_database):
+def _override_get_db():
     session = TestingSessionLocal()
     try:
         yield session
@@ -33,20 +35,4 @@ def db_session(setup_database):
         session.close()
 
 
-def override_get_db():
-    session = TestingSessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-
-
-@pytest.fixture()
-def client():
-    from fastapi.testclient import TestClient
-
-    with TestClient(app) as c:
-        yield c
+app.dependency_overrides[get_db] = _override_get_db
