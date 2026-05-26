@@ -1,24 +1,18 @@
-# Definición de los endpoints REST para la gestión de tareas
-
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.orm import Session
 
 from aplicacion.base_de_datos import get_db
 from aplicacion.esquemas import TaskCreate, TaskResponse, TaskUpdate
 from aplicacion.modelos import Task, TaskStatus
 
-# Router con prefijo /tasks; agrupa todos los endpoints de tareas
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
-def _get_task_or_404(task_id: int, db: Session) -> Task:
-    """Valida el id, busca la tarea y lanza la excepción HTTP correspondiente."""
-    if task_id <= 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid task id"
-        )
+def get_existing_task(
+    task_id: int = Path(..., gt=0), db: Session = Depends(get_db)
+) -> Task:
     task = db.query(Task).filter(Task.id == task_id).first()
     if task is None:
         raise HTTPException(
@@ -33,8 +27,8 @@ def list_tasks(db: Session = Depends(get_db)):
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
-def get_task(task_id: int, db: Session = Depends(get_db)):
-    return _get_task_or_404(task_id, db)
+def get_task(task: Task = Depends(get_existing_task)):
+    return task
 
 
 @router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
@@ -47,9 +41,10 @@ def create_task(payload: TaskCreate, db: Session = Depends(get_db)):
 
 
 @router.patch("/{task_id}", response_model=TaskResponse)
-def update_task(task_id: int, payload: TaskUpdate, db: Session = Depends(get_db)):
-    task = _get_task_or_404(task_id, db)
-
+def update_task(
+    payload: TaskUpdate, task: Task = Depends(get_existing_task),
+    db: Session = Depends(get_db),
+):
     # Bug: comprueba el estado del payload en lugar del estado actual de la tarea;
     # una tarea ya completada puede modificarse sin ningún error
     if payload.status == TaskStatus.done:
@@ -66,7 +61,8 @@ def update_task(task_id: int, payload: TaskUpdate, db: Session = Depends(get_db)
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_task(task_id: int, db: Session = Depends(get_db)):
-    task = _get_task_or_404(task_id, db)
+def delete_task(
+    task: Task = Depends(get_existing_task), db: Session = Depends(get_db)
+):
     db.delete(task)
     db.commit()
