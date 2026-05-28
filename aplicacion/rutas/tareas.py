@@ -60,6 +60,11 @@ def update_task(
     payload: TaskUpdate, task: Task = Depends(get_existing_task),
     db: Session = Depends(get_db),
 ):
+    if task.status == TaskStatus.done:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot update a task that is already done",
+        )
     if payload.status == TaskStatus.done:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
