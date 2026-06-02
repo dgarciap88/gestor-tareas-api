@@ -30,17 +30,17 @@ class TestGetTaskErrors:
     def test_get_nonexistent_task_returns_404(self, client):
         resp = client.get("/tasks/9999")
         assert resp.status_code == 404
-        assert resp.json()["detail"] == "Task not found"
+        assert resp.json()["detail"] == "Tarea no encontrada"
 
     def test_get_task_id_zero_returns_404(self, client):
         resp = client.get("/tasks/0")
         assert resp.status_code == 404
-        assert resp.json()["detail"] == "Task not found"
+        assert resp.json()["detail"] == "Tarea no encontrada"
 
     def test_get_task_negative_id_returns_404(self, client):
         resp = client.get("/tasks/-1")
         assert resp.status_code == 404
-        assert resp.json()["detail"] == "Task not found"
+        assert resp.json()["detail"] == "Tarea no encontrada"
 
     def test_get_task_string_id_returns_422(self, client):
         resp = client.get("/tasks/abc")
@@ -128,7 +128,7 @@ class TestUpdateTaskErrors:
     def test_update_nonexistent_task_returns_404(self, client):
         resp = client.patch("/tasks/9999", json={"title": "new"})
         assert resp.status_code == 404
-        assert resp.json()["detail"] == "Task not found"
+        assert resp.json()["detail"] == "Tarea no encontrada"
 
     def test_update_task_invalid_status_returns_422(self, client):
         create = client.post("/tasks/", json={"title": "t"})
@@ -183,7 +183,7 @@ class TestDeleteTaskErrors:
     def test_delete_nonexistent_task_returns_404(self, client):
         resp = client.delete("/tasks/9999")
         assert resp.status_code == 404
-        assert resp.json()["detail"] == "Task not found"
+        assert resp.json()["detail"] == "Tarea no encontrada"
 
     def test_delete_task_string_id_returns_422(self, client):
         resp = client.delete("/tasks/abc")
@@ -199,7 +199,7 @@ class TestDeleteTaskErrors:
         assert first.status_code == 204
         second = client.delete(f"/tasks/{tid}")
         assert second.status_code == 404
-        assert second.json()["detail"] == "Task not found"
+        assert second.json()["detail"] == "Tarea no encontrada"
 
 
 # ---------------------------------------------------------------------------
@@ -454,7 +454,7 @@ class TestCRUDFlow:
 
         gone = client.get(f"/tasks/{tid}")
         assert gone.status_code == 404
-        assert gone.json()["detail"] == "Task not found"
+        assert gone.json()["detail"] == "Tarea no encontrada"
 
 
 # ---------------------------------------------------------------------------
