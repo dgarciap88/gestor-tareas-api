@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from aplicacion.base_de_datos import get_db
 from aplicacion.esquemas import TaskCreate, TaskResponse, TaskUpdate
-from aplicacion.modelos import Task, TaskStatus
+from aplicacion.modelos import Task, TaskPriority, TaskStatus
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 

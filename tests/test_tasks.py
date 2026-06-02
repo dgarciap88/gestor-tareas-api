@@ -378,6 +378,7 @@ class TestSchemas:
         t = TaskCreate(title="test")
         assert t.description is None
         assert t.status.value == "pending"
+        assert t.priority.value == "medium"
 
     def test_task_update_all_none(self):
         from aplicacion.esquemas import TaskUpdate
@@ -386,6 +387,7 @@ class TestSchemas:
         assert t.title is None
         assert t.description is None
         assert t.status is None
+        assert t.priority is None
 
     def test_task_create_with_categoria(self):
         from aplicacion.esquemas import TaskCreate
@@ -552,3 +554,70 @@ class TestListTasksByStatus:
         response = client.get("/tasks/status/invalid_status")
         assert response.status_code == 422
         assert "detail" in response.json()
+
+
+# ---------------------------------------------------------------------------
+# Campo prioridad — creación, actualización y validación
+# ---------------------------------------------------------------------------
+
+
+class TestPriorityField:
+    def test_create_task_default_priority_is_medium(self, client):
+        resp = client.post("/tasks/", json={"title": "sin prioridad"})
+        assert resp.status_code == 201
+        assert resp.json()["priority"] == "medium"
+
+    def test_create_task_with_low_priority(self, client):
+        resp = client.post(
+            "/tasks/", json={"title": "baja", "priority": "low"}
+        )
+        assert resp.status_code == 201
+        assert resp.json()["priority"] == "low"
+
+    def test_create_task_with_high_priority(self, client):
+        resp = client.post(
+            "/tasks/", json={"title": "alta", "priority": "high"}
+        )
+        assert resp.status_code == 201
+        assert resp.json()["priority"] == "high"
+
+    def test_create_task_invalid_priority_returns_422(self, client):
+        resp = client.post(
+            "/tasks/", json={"title": "mala", "priority": "urgent"}
+        )
+        assert resp.status_code == 422
+        assert "detail" in resp.json()
+
+    def test_update_task_priority(self, client):
+        create = client.post("/tasks/", json={"title": "cambiar"})
+        tid = create.json()["id"]
+        resp = client.patch(f"/tasks/{tid}", json={"priority": "high"})
+        assert resp.status_code == 200
+        assert resp.json()["priority"] == "high"
+
+    def test_update_task_invalid_priority_returns_422(self, client):
+        create = client.post("/tasks/", json={"title": "mala act"})
+        tid = create.json()["id"]
+        resp = client.patch(
+            f"/tasks/{tid}", json={"priority": "critical"}
+        )
+        assert resp.status_code == 422
+        assert "detail" in resp.json()
+
+    def test_get_task_includes_priority(self, client):
+        create = client.post(
+            "/tasks/", json={"title": "ver", "priority": "low"}
+        )
+        tid = create.json()["id"]
+        resp = client.get(f"/tasks/{tid}")
+        assert resp.status_code == 200
+        assert resp.json()["priority"] == "low"
+
+    def test_list_tasks_includes_priority(self, client):
+        client.post("/tasks/", json={"title": "tarea alta", "priority": "high"})
+        client.post("/tasks/", json={"title": "tarea normal"})
+        resp = client.get("/tasks/")
+        assert resp.status_code == 200
+        priorities = [t["priority"] for t in resp.json()]
+        assert "high" in priorities
+        assert "medium" in priorities
