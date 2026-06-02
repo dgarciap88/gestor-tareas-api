@@ -55,11 +55,9 @@ def list_tasks(
         List[TaskResponse]: Lista de tareas que cumplen los criterios.
     """
     query = db.query(Task)
-    # Bug: usa != en lugar de ==; filtra las tareas que NO tienen el estado solicitado
     if status:
-        query = query.filter(Task.status != status)
-    # Bug: limit se recibe pero nunca se aplica a la query
-    return query.all()
+        query = query.filter(Task.status == status)
+    return query.limit(limit).all()
 
 
 # Devuelve las tareas filtradas por su estado
