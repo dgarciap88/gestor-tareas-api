@@ -387,6 +387,18 @@ class TestSchemas:
         assert t.description is None
         assert t.status is None
 
+    def test_task_create_with_categoria(self):
+        from aplicacion.esquemas import TaskCreate
+
+        t = TaskCreate(title="test", categoria="trabajo")
+        assert t.categoria == "trabajo"
+
+    def test_task_update_categoria(self):
+        from aplicacion.esquemas import TaskUpdate
+
+        t = TaskUpdate(categoria="personal")
+        assert t.categoria == "personal"
+
     def test_task_response_from_attributes(self):
         from aplicacion.esquemas import TaskResponse
 
@@ -419,6 +431,62 @@ class TestGetDb:
             gen.throw(RuntimeError("test error"))
         except RuntimeError:
             pass
+
+
+# ---------------------------------------------------------------------------
+# Campo categoria — tests de integración
+# ---------------------------------------------------------------------------
+
+
+class TestCategoriaAPI:
+    def test_create_task_with_categoria(self, client):
+        resp = client.post(
+            "/tasks/",
+            json={"title": "tarea con cat", "categoria": "trabajo"},
+        )
+        assert resp.status_code == 201
+        body = resp.json()
+        assert body["categoria"] == "trabajo"
+
+    def test_create_task_without_categoria(self, client):
+        resp = client.post(
+            "/tasks/", json={"title": "tarea sin cat"}
+        )
+        assert resp.status_code == 201
+        assert resp.json()["categoria"] is None
+
+    def test_update_categoria(self, client):
+        create = client.post(
+            "/tasks/", json={"title": "tarea base"}
+        )
+        tid = create.json()["id"]
+        resp = client.patch(
+            f"/tasks/{tid}", json={"categoria": "personal"}
+        )
+        assert resp.status_code == 200
+        assert resp.json()["categoria"] == "personal"
+
+    def test_list_tasks_includes_categoria(self, client):
+        client.post(
+            "/tasks/",
+            json={"title": "tarea uno", "categoria": "trabajo"},
+        )
+        client.post("/tasks/", json={"title": "tarea dos"})
+        resp = client.get("/tasks/")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data[0]["categoria"] == "trabajo"
+        assert data[1]["categoria"] is None
+
+    def test_get_task_includes_categoria(self, client):
+        create = client.post(
+            "/tasks/",
+            json={"title": "tarea lectura", "categoria": "estudio"},
+        )
+        tid = create.json()["id"]
+        resp = client.get(f"/tasks/{tid}")
+        assert resp.status_code == 200
+        assert resp.json()["categoria"] == "estudio"
 
 
 # ---------------------------------------------------------------------------
