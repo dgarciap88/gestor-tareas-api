@@ -12,6 +12,12 @@ class TaskStatus(str, enum.Enum):
     done = "done"
 
 
+class TaskPriority(str, enum.Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+
+
 class Task(Base):
     __tablename__ = "tasks"
 
@@ -19,4 +25,5 @@ class Task(Base):
     title = Column(String(255), nullable=False)
     description = Column(String, nullable=True)
     status = Column(Enum(TaskStatus), default=TaskStatus.pending, nullable=False)
+    priority = Column(Enum(TaskPriority), default=TaskPriority.medium, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
