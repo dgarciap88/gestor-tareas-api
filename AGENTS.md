@@ -2,7 +2,7 @@
 
 ## Descripción del proyecto
 
-API REST para gestionar tareas construida con FastAPI y SQLAlchemy. Permite crear, consultar, actualizar y eliminar tareas. Cada tarea tiene un identificador, título, descripción opcional, estado (`pending`, `in_progress`, `done`) y fecha de creación automática.
+API REST para gestionar tareas construida con FastAPI y SQLAlchemy. Permite crear, consultar, actualizar y eliminar tareas. Cada tarea tiene un identificador, título, descripción opcional, categoría opcional, estado (`pending`, `in_progress`, `done`) y fecha de creación automática.
 
 ## Stack tecnológico
 

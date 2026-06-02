@@ -1,6 +1,6 @@
 # API de Gestión de Tareas
 
-API REST para gestionar tareas construida con **FastAPI** y **SQLAlchemy**. Permite crear, consultar, actualizar y eliminar tareas. Cada tarea tiene un identificador, título, descripción opcional, estado (`pending`, `in_progress`, `done`) y fecha de creación automática.
+API REST para gestionar tareas construida con **FastAPI** y **SQLAlchemy**. Permite crear, consultar, actualizar y eliminar tareas. Cada tarea tiene un identificador, título, descripción opcional, categoría opcional, estado (`pending`, `in_progress`, `done`) y fecha de creación automática.
 
 ---
 
@@ -76,6 +76,7 @@ La API expone cinco endpoints bajo el prefijo `/tasks`. Todos aceptan y devuelve
   "id": 1,
   "title": "Revisar código",
   "description": "Revisar el PR #10",
+  "categoria": null,
   "status": "pending",
   "created_at": "2025-05-28T14:00:00"
 }
@@ -108,6 +109,7 @@ curl http://127.0.0.1:8000/tasks/
     "id": 1,
     "title": "Revisar código",
     "description": "Revisar el PR #10",
+    "categoria": null,
     "status": "pending",
     "created_at": "2025-05-28T14:00:00"
   }
@@ -142,6 +144,7 @@ curl http://127.0.0.1:8000/tasks/1
   "id": 1,
   "title": "Revisar código",
   "description": "Revisar el PR #10",
+  "categoria": null,
   "status": "pending",
   "created_at": "2025-05-28T14:00:00"
 }
@@ -170,6 +173,7 @@ curl http://127.0.0.1:8000/tasks/1
 |---------------|----------|-------------|-------------------|---------------------------|
 | `title`       | `string` | Sí          | —                 | Título de la tarea        |
 | `description` | `string` | No          | `null`            | Descripción opcional      |
+| `categoria`   | `string` | No          | `null`            | Categoría de la tarea     |
 | `status`      | `string` | No          | `"pending"`       | Estado inicial            |
 
 **Ejemplo de petición:**
@@ -187,6 +191,7 @@ curl -X POST http://127.0.0.1:8000/tasks/ \
   "id": 2,
   "title": "Escribir tests",
   "description": "Cubrir los endpoints CRUD",
+  "categoria": null,
   "status": "pending",
   "created_at": "2025-05-28T14:05:00"
 }
@@ -213,6 +218,7 @@ curl -X POST http://127.0.0.1:8000/tasks/ \
 |---------------|----------|-------------|------------------------------------|
 | `title`       | `string` | No          | Nuevo título                       |
 | `description` | `string` | No          | Nueva descripción                  |
+| `categoria`   | `string` | No          | Nueva categoría                    |
 | `status`      | `string` | No          | Nuevo estado                       |
 
 Solo se actualizan los campos enviados en el cuerpo; los demás permanecen sin cambios.
@@ -232,6 +238,7 @@ curl -X PATCH http://127.0.0.1:8000/tasks/2 \
   "id": 2,
   "title": "Escribir tests",
   "description": "Cubrir los endpoints CRUD",
+  "categoria": null,
   "status": "in_progress",
   "created_at": "2025-05-28T14:05:00"
 }
