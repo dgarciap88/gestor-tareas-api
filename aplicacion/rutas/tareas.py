@@ -32,7 +32,7 @@ def get_existing_task(
     task = db.query(Task).filter(Task.id == task_id).first()
     if task is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found in api"
         )
     return task
 
