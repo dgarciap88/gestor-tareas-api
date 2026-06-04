@@ -1,8 +1,10 @@
-# Instrucciones para Devin — API de Gestión de Tareas
+﻿# Instrucciones para Devin — API de Gestión de Tareas
 
 ## Descripción del proyecto
 
-API REST para gestionar tareas construida con FastAPI y SQLAlchemy. Permite crear, consultar, actualizar y eliminar tareas. Cada tarea tiene un identificador, título, descripción opcional, categoría opcional, estado (`pending`, `in_progress`, `done`) y fecha de creación automática.
+API REST para gestionar tareas construida con FastAPI y SQLAlchemy. Permite
+crear, consultar, actualizar y eliminar tareas. Cada tarea tiene un identificador,
+título, descripción opcional, categoría opcional, estado (`pending`, `in_progress`, `done`) y fecha de creación automática.
 
 ## Stack tecnológico
 
@@ -19,19 +21,22 @@ API REST para gestionar tareas construida con FastAPI y SQLAlchemy. Permite crea
 ## Estructura del proyecto
 
 ```
-task-manager-api/
+gestor-tareas-api/
 ├── aplicacion/
 │   ├── principal.py       # Punto de entrada: instancia FastAPI y registra routers
 │   ├── base_de_datos.py   # Configuración del engine y sesión de SQLAlchemy
-│   ├── modelos.py         # Modelos ORM (tabla tasks, enum TaskStatus)
+│   ├── modelos.py         # Modelos ORM (tabla tasks, enums TaskStatus y TaskPriority)
 │   ├── esquemas.py        # Esquemas Pydantic de entrada y respuesta
 │   └── rutas/
 │       └── tareas.py      # Endpoints REST de tareas
 ├── tests/
 │   └── test_tasks.py      # Tests con pytest y SQLite en memoria
+├── .agents/
+│   └── skills/
+│       ├── run-local/SKILL.md   # Skill: arrancar la API localmente
+│       └── test-api/SKILL.md    # Skill: ejecutar la suite de tests
 ├── requirements.txt
-└── .devin/
-    └── instructions.md
+└── AGENTS.md
 ```
 
 ## Cómo arrancar la API
@@ -64,13 +69,15 @@ La documentación interactiva (Swagger UI) en `http://127.0.0.1:8000/docs`.
 pytest tests/ -v
 ```
 
-Los tests usan una base de datos SQLite en memoria con `StaticPool` para garantizar aislamiento entre casos. No tocan el archivo `tareas.db` de producción.
+Los tests usan una base de datos SQLite en memoria con `StaticPool` para garantizar
+aislamiento entre casos. No tocan el archivo `tareas.db` de producción.
 
 ## Endpoints disponibles
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/tasks/` | Lista todas las tareas |
+| GET | `/tasks/` | Lista todas las tareas (soporta `?status=` y `?limit=`) |
+| GET | `/tasks/status/{status}` | Lista tareas filtradas por estado |
 | GET | `/tasks/{id}` | Obtiene una tarea por id |
 | POST | `/tasks/` | Crea una nueva tarea |
 | PATCH | `/tasks/{id}` | Actualiza parcialmente una tarea |
@@ -106,4 +113,10 @@ Los tests usan una base de datos SQLite en memoria con `StaticPool` para garanti
 - No hacer commit de `tareas.db`, `__pycache__/` ni archivos `.pyc`.
 
 ### Nuevos endpoints
-- Todos los endpoint nuevos deben incluir al menos un test de caso de eeror ademas del happy path obligatoriamente.
+- Todos los endpoints nuevos deben incluir al menos un test de caso de error además del happy path obligatoriamente.
+
+### Documentación en PRs
+Cada PR debe incluir:
+- Docstrings actualizados en las funciones modificadas con Google style.
+- Actualización del README si se añaden o modifican endpoints.
+- Descripción del PR con qué cambió, por qué cambió y cómo probarlo.
