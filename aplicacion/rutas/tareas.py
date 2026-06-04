@@ -37,29 +37,31 @@ def get_existing_task(
     return task
 
 
-# Devuelve tareas con filtro opcional por estado y límite de resultados
+# Devuelve tareas con filtro opcional por estado, límite y salto de resultados
 @router.get("/", response_model=List[TaskResponse])
 def list_tasks(
     db: Session = Depends(get_db),
     status: Optional[TaskStatus] = Query(default=None),
     limit: int = Query(default=10, ge=1),
+    skip: int = Query(default=0, ge=0),
 ):
-    """Devuelve tareas con filtro opcional por estado y límite de resultados.
+    """Devuelve tareas con filtro opcional por estado, límite y salto de resultados.
 
     Args:
         db (Session): Sesión de base de datos inyectada por FastAPI.
         status (Optional[TaskStatus]): Filtra por estado de la tarea.
         limit (int): Número máximo de resultados (por defecto 10).
+        skip (int): Número de resultados a omitir para paginación (por defecto 0).
 
     Returns:
         List[TaskResponse]: Lista de tareas que cumplen los criterios.
     """
     query = db.query(Task)
-    # Bug: usa != en lugar de ==; filtra las tareas que NO tienen el estado solicitado
+    # Bug: usa != en lugar de ==; devuelve tareas que NO tienen el estado solicitado
     if status:
         query = query.filter(Task.status != status)
-    # Bug: limit se recibe pero nunca se aplica a la query
-    return query.all()
+    # Bug: skip y limit están intercambiados; offset recibe limit y limit recibe skip
+    return query.offset(limit).limit(skip).all()
 
 
 # Devuelve las tareas filtradas por su estado
