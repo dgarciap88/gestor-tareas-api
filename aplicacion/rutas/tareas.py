@@ -93,14 +93,7 @@ def create_task(payload: TaskCreate, db: Session = Depends(get_db)):
     Returns:
         TaskResponse: La tarea recién creada con su id y fecha de creación.
 
-    Raises:
-        HTTPException: 422 si el título tiene menos de 3 caracteres.
     """
-    if len(payload.title) < 3:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="El título debe tener al menos 3 caracteres",
-        )
     task = Task(**payload.model_dump())
     db.add(task)
     db.commit()
@@ -131,7 +124,7 @@ def update_task(
         HTTPException: 400 si la tarea ya está completada (done).
         HTTPException: 400 si se intenta establecer el estado a done directamente.
     """
-    if task.status == TaskStatus.done:
+    if payload.status == TaskStatus.done:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot update a task that is already done",
