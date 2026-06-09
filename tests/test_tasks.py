@@ -628,7 +628,7 @@ class TestPriorityField:
 # ---------------------------------------------------------------------------
 
 
-def test_create_task_returns_201():
+def test_create_task_returns_201(client):
     response = client.post(
         "/tasks/",
         json={"title": "Test"}
