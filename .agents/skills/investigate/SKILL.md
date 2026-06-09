@@ -4,7 +4,7 @@ description: Investiga en profundidad una parte del código y produce un informe
 allowed-tools: Read, Grep, ListDir
 triggers: ["user"]
 argument-hint: <tema o área a investigar>
----
+--- 
 
 ## Investigación
 
