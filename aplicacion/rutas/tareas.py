@@ -1,6 +1,7 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from aplicacion.base_de_datos import get_db
@@ -66,6 +67,20 @@ def list_tasks(
 @router.get("/status/{task_status}", response_model=List[TaskResponse])
 def list_tasks_by_status(task_status: TaskStatus, db: Session = Depends(get_db)):
     return db.query(Task).filter(Task.status == task_status).all()
+
+
+@router.get("/count", response_model=Dict[str, int])
+def count_tasks(db: Session = Depends(get_db)):
+    """Devuelve el número total de tareas en la base de datos.
+
+    Args:
+        db (Session): Sesión de base de datos inyectada por FastAPI.
+
+    Returns:
+        Dict[str, int]: Diccionario con la clave ``count`` y el total de tareas.
+    """
+    total = db.query(func.count(Task.id)).scalar()
+    return {"count": total}
 
 
 @router.get("/{task_id}", response_model=TaskResponse)

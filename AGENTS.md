@@ -78,6 +78,7 @@ aislamiento entre casos. No tocan el archivo `tareas.db` de producción.
 |---|---|---|
 | GET | `/tasks/` | Lista todas las tareas (soporta `?status=` y `?limit=`) |
 | GET | `/tasks/status/{status}` | Lista tareas filtradas por estado |
+| GET | `/tasks/count` | Devuelve el número total de tareas |
 | GET | `/tasks/{id}` | Obtiene una tarea por id |
 | POST | `/tasks/` | Crea una nueva tarea |
 | PATCH | `/tasks/{id}` | Actualiza parcialmente una tarea |
