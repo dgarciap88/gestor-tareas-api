@@ -220,6 +220,46 @@ class TestListTasks:
         assert resp.status_code == 200
         assert len(resp.json()) == 5
 
+    def test_list_tasks_filter_by_status_returns_only_matching(self, client):
+        client.post("/tasks/", json={"title": "pending1", "status": "pending"})
+        client.post("/tasks/", json={"title": "progress1", "status": "in_progress"})
+        client.post("/tasks/", json={"title": "pending2", "status": "pending"})
+
+        resp = client.get("/tasks/", params={"status": "pending"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 2
+        assert all(t["status"] == "pending" for t in data)
+
+    def test_list_tasks_filter_by_status_excludes_non_matching(self, client):
+        client.post("/tasks/", json={"title": "done1", "status": "done"})
+        client.post("/tasks/", json={"title": "pending1", "status": "pending"})
+
+        resp = client.get("/tasks/", params={"status": "done"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 1
+        assert data[0]["title"] == "done1"
+
+    def test_list_tasks_limit_restricts_results(self, client):
+        for i in range(5):
+            client.post("/tasks/", json={"title": f"task_{i}"})
+
+        resp = client.get("/tasks/", params={"limit": 3})
+        assert resp.status_code == 200
+        assert len(resp.json()) == 3
+
+    def test_list_tasks_limit_and_status_combined(self, client):
+        for i in range(4):
+            client.post("/tasks/", json={"title": f"pending_{i}", "status": "pending"})
+        client.post("/tasks/", json={"title": "progress", "status": "in_progress"})
+
+        resp = client.get("/tasks/", params={"status": "pending", "limit": 2})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 2
+        assert all(t["status"] == "pending" for t in data)
+
 
 # ---------------------------------------------------------------------------
 # POST /tasks/ — happy path y campos opcionales
