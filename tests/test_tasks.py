@@ -621,3 +621,16 @@ class TestPriorityField:
         priorities = [t["priority"] for t in resp.json()]
         assert "high" in priorities
         assert "medium" in priorities
+
+
+# ---------------------------------------------------------------------------
+# POST /tasks/ — test proporcionado por el usuario
+# ---------------------------------------------------------------------------
+
+
+def test_create_task_returns_201(client):
+    response = client.post(
+        "/tasks/",
+        json={"title": "Test"}
+    )
+    assert response.status_code == 201
