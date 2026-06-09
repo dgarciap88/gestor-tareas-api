@@ -1,25 +1,19 @@
-﻿---
+---
 name: investigate
-description: Investiga el código y produce un informe con referencias exactas.
+description: Investiga en profundidad una parte del código y produce un informe con referencias exactas a archivos y líneas.
+allowed-tools: Read, Grep, ListDir
+triggers: ["user"]
+argument-hint: <tema o área a investigar>
 ---
 
-## Objetivo
+## Investigación
 
-Investigar un tema o área del código indicado por el usuario y producir un informe
-conciso con referencias exactas (archivo y línea).
+1. Busca en el repositorio los archivos relacionados con: $ARGUMENTS
+2. Lee los archivos más relevantes en profundidad
+3. Traza el flujo de llamadas y el flujo de datos entre módulos
 
-## Pasos
+## Informe
 
-1. Identifica el tema o área a investigar según la solicitud del usuario.
-2. Usa `grep` y lectura de archivos para localizar el código relevante.
-3. Lee los archivos encontrados para entender la lógica y las relaciones.
-4. Documenta los hallazgos con referencias exactas (`archivo:línea`).
-
-## Formato del informe
-
-Presenta los resultados al usuario con:
-
-- **Resumen**: descripción breve de lo encontrado (2-3 frases).
-- **Referencias**: lista de archivos y líneas relevantes usando `<ref_snippet>` tags.
-- **Relaciones**: cómo se conectan los componentes encontrados (dependencias, flujo de datos).
-- **Observaciones**: posibles mejoras o problemas detectados (solo si aplica).
+1. Escribe un resumen de cómo funciona $ARGUMENTS
+2. Incluye rutas de archivo y número de línea concretos para cada afirmación
+3. Señala cualquier riesgo, caso límite o área que necesite atención
