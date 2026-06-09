@@ -621,3 +621,41 @@ class TestPriorityField:
         priorities = [t["priority"] for t in resp.json()]
         assert "high" in priorities
         assert "medium" in priorities
+
+
+# ---------------------------------------------------------------------------
+# GET /tasks/?limit= — límite de resultados
+# ---------------------------------------------------------------------------
+
+
+class TestListTasksLimit:
+    def test_limit_restricts_number_of_results(self, client):
+        for i in range(5):
+            client.post("/tasks/", json={"title": f"tarea {i}"})
+        resp = client.get("/tasks/", params={"limit": 3})
+        assert resp.status_code == 200
+        assert len(resp.json()) == 3
+
+    def test_limit_returns_all_when_greater_than_total(self, client):
+        for i in range(2):
+            client.post("/tasks/", json={"title": f"tarea {i}"})
+        resp = client.get("/tasks/", params={"limit": 100})
+        assert resp.status_code == 200
+        assert len(resp.json()) == 2
+
+    def test_limit_zero_returns_422(self, client):
+        resp = client.get("/tasks/", params={"limit": 0})
+        assert resp.status_code == 422
+        assert "detail" in resp.json()
+
+    def test_limit_negative_returns_422(self, client):
+        resp = client.get("/tasks/", params={"limit": -1})
+        assert resp.status_code == 422
+        assert "detail" in resp.json()
+
+    def test_limit_default_is_ten(self, client):
+        for i in range(15):
+            client.post("/tasks/", json={"title": f"tarea {i}"})
+        resp = client.get("/tasks/")
+        assert resp.status_code == 200
+        assert len(resp.json()) == 10
