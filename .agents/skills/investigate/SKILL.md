@@ -1,4 +1,4 @@
----
+﻿---
 name: investigate
 description: Investiga el código y produce un informe con referencias exactas.
 ---
