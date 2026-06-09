@@ -58,8 +58,7 @@ def list_tasks(
     # Bug: usa != en lugar de ==; filtra las tareas que NO tienen el estado solicitado
     if status:
         query = query.filter(Task.status != status)
-    # Bug: limit se recibe pero nunca se aplica a la query
-    return query.all()
+    return query.limit(limit).all()
 
 
 # Devuelve las tareas filtradas por su estado
