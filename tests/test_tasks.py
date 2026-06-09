@@ -621,3 +621,23 @@ class TestPriorityField:
         priorities = [t["priority"] for t in resp.json()]
         assert "high" in priorities
         assert "medium" in priorities
+
+
+# ---------------------------------------------------------------------------
+# GET /tasks/count — conteo total de tareas
+# ---------------------------------------------------------------------------
+
+
+class TestCountTasks:
+    def test_count_returns_200(self, client):
+        resp = client.get("/tasks/count")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "count" in data
+        assert isinstance(data["count"], int)
+
+    def test_count_increases_after_creating_task(self, client):
+        initial = client.get("/tasks/count").json()["count"]
+        client.post("/tasks/", json={"title": "nueva tarea"})
+        updated = client.get("/tasks/count").json()["count"]
+        assert updated == initial + 1
