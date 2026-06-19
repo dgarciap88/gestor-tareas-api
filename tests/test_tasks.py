@@ -32,15 +32,15 @@ class TestGetTaskErrors:
         assert resp.status_code == 404
         assert resp.json()["detail"] == "Tarea no encontrada"
 
-    def test_get_task_id_zero_returns_404(self, client):
+    def test_get_task_id_zero_returns_422(self, client):
         resp = client.get("/tasks/0")
-        assert resp.status_code == 404
-        assert resp.json()["detail"] == "Tarea no encontrada"
+        assert resp.status_code == 422
+        assert "detail" in resp.json()
 
-    def test_get_task_negative_id_returns_404(self, client):
+    def test_get_task_negative_id_returns_422(self, client):
         resp = client.get("/tasks/-1")
-        assert resp.status_code == 404
-        assert resp.json()["detail"] == "Tarea no encontrada"
+        assert resp.status_code == 422
+        assert "detail" in resp.json()
 
     def test_get_task_string_id_returns_422(self, client):
         resp = client.get("/tasks/abc")
@@ -77,10 +77,15 @@ class TestCreateTaskErrors:
         assert resp.status_code == 422
         assert "detail" in resp.json()
 
+    def test_create_task_short_title_returns_422(self, client):
+        resp = client.post("/tasks/", json={"title": "ab"})
+        assert resp.status_code == 422
+        assert resp.json()["detail"] == "El t\u00edtulo debe tener al menos 3 caracteres"
+
     def test_create_task_extra_fields_are_ignored(self, client):
         resp = client.post(
             "/tasks/",
-            json={"title": "t", "extra_field": "ignored"},
+            json={"title": "test", "extra_field": "ignored"},
         )
         assert resp.status_code == 201
         assert "extra_field" not in resp.json()
@@ -131,7 +136,7 @@ class TestUpdateTaskErrors:
         assert resp.json()["detail"] == "Tarea no encontrada"
 
     def test_update_task_invalid_status_returns_422(self, client):
-        create = client.post("/tasks/", json={"title": "t"})
+        create = client.post("/tasks/", json={"title": "test"})
         tid = create.json()["id"]
         resp = client.patch(
             f"/tasks/{tid}", json={"status": "bad"}
@@ -156,15 +161,32 @@ class TestUpdateTaskErrors:
     def test_update_task_null_title_triggers_db_error(self, client):
         from sqlalchemy.exc import IntegrityError
 
-        create = client.post("/tasks/", json={"title": "t"})
+        create = client.post("/tasks/", json={"title": "test"})
         tid = create.json()["id"]
         with pytest.raises(IntegrityError):
             client.patch(f"/tasks/{tid}", json={"title": None})
 
+    def test_update_done_task_returns_400(self, client):
+        create = client.post(
+            "/tasks/",
+            json={"title": "done task", "status": "done"},
+        )
+        tid = create.json()["id"]
+        resp = client.patch(f"/tasks/{tid}", json={"title": "updated"})
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "Cannot update a task that is already done"
+
+    def test_update_task_set_status_done_returns_400(self, client):
+        create = client.post("/tasks/", json={"title": "test task"})
+        tid = create.json()["id"]
+        resp = client.patch(f"/tasks/{tid}", json={"status": "done"})
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "No se puede establecer el estado a done directamente"
+
     def test_update_task_null_description(self, client):
         create = client.post(
             "/tasks/",
-            json={"title": "t", "description": "desc"},
+            json={"title": "test", "description": "desc"},
         )
         tid = create.json()["id"]
         resp = client.patch(
@@ -262,7 +284,7 @@ class TestCreateTaskHappyPath:
 
     def test_create_task_empty_description(self, client):
         resp = client.post(
-            "/tasks/", json={"title": "t", "description": ""}
+            "/tasks/", json={"title": "test", "description": ""}
         )
         assert resp.status_code == 201
         assert resp.json()["description"] == ""
@@ -301,16 +323,16 @@ class TestUpdateTaskHappyPath:
         assert resp.json()["title"] == "new"
 
     def test_update_status(self, client):
-        create = client.post("/tasks/", json={"title": "t"})
+        create = client.post("/tasks/", json={"title": "test"})
         tid = create.json()["id"]
         resp = client.patch(
-            f"/tasks/{tid}", json={"status": "done"}
+            f"/tasks/{tid}", json={"status": "in_progress"}
         )
         assert resp.status_code == 200
-        assert resp.json()["status"] == "done"
+        assert resp.json()["status"] == "in_progress"
 
     def test_update_multiple_fields(self, client):
-        create = client.post("/tasks/", json={"title": "t"})
+        create = client.post("/tasks/", json={"title": "test"})
         tid = create.json()["id"]
         resp = client.patch(
             f"/tasks/{tid}",
